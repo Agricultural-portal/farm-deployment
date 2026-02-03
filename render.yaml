@@ -1,57 +1,37 @@
 services:
-  # MySQL Database
-  - type: pserv
-    name: farm-mysql
-    env: docker
-    dockerfilePath: ./mysql/Dockerfile
-    envVars:
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-      - key: MYSQL_DATABASE
-        value: farm_connect_db
-      - key: MYSQL_USER
-        value: farmuser
-      - key: MYSQL_PASSWORD
-        generateValue: true
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
-
-  # Backend Service
+  # Backend Service (from Docker Hub)
   - type: web
     name: farm-backend
-    env: docker
-    dockerfilePath: ./backend/Backend/Dockerfile
-    dockerContext: ./backend/Backend
+    runtime: image
+    image:
+      url: docker.io/aj783/farm-backend:latest
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_DATASOURCE_URL
-        fromService:
-          type: pserv
-          name: farm-mysql
-          envVarKey: DATABASE_URL
+        value: jdbc:mysql://[YOUR_MYSQL_HOST]:[PORT]/farm_connect_db
       - key: SPRING_DATASOURCE_USERNAME
         value: farmuser
       - key: SPRING_DATASOURCE_PASSWORD
-        fromService:
-          type: pserv
-          name: farm-mysql
-          envVarKey: MYSQL_PASSWORD
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION
         value: "86400000"
+      - key: SERVER_PORT
+        value: "8080"
 
-  # Frontend Service
+  # Frontend Service (from Docker Hub)
   - type: web
     name: farm-frontend
-    env: docker
-    dockerfilePath: ./frontend/Frontend/Dockerfile
-    dockerContext: ./frontend/Frontend
+    runtime: image
+    image:
+      url: docker.io/aj783/farm-frontend:latest
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: farm-backend
-          property: url
+        value: https://farm-backend.onrender.com/api
+
+# Note: For MySQL database, use an external service like:
+# - PlanetScale (free tier)
+# - Railway (free tier with MySQL)
+# - Render PostgreSQL (free, but requires DB migration)
+# Update SPRING_DATASOURCE_URL above with your database connection string
