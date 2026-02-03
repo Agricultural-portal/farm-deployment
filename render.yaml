@@ -1,0 +1,57 @@
+services:
+  # MySQL Database
+  - type: pserv
+    name: farm-mysql
+    env: docker
+    dockerfilePath: ./mysql/Dockerfile
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+      - key: MYSQL_DATABASE
+        value: farm_connect_db
+      - key: MYSQL_USER
+        value: farmuser
+      - key: MYSQL_PASSWORD
+        generateValue: true
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+
+  # Backend Service
+  - type: web
+    name: farm-backend
+    env: docker
+    dockerfilePath: ./backend/Backend/Dockerfile
+    dockerContext: ./backend/Backend
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromService:
+          type: pserv
+          name: farm-mysql
+          envVarKey: DATABASE_URL
+      - key: SPRING_DATASOURCE_USERNAME
+        value: farmuser
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromService:
+          type: pserv
+          name: farm-mysql
+          envVarKey: MYSQL_PASSWORD
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: "86400000"
+
+  # Frontend Service
+  - type: web
+    name: farm-frontend
+    env: docker
+    dockerfilePath: ./frontend/Frontend/Dockerfile
+    dockerContext: ./frontend/Frontend
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: farm-backend
+          property: url
