@@ -1,0 +1,6 @@
+[submodule "backend/Backend"]
+	path = backend/Backend
+	url = https://github.com/Agricultural-portal/Backend.git
+[submodule "frontend/Frontend"]
+	path = frontend/Frontend
+	url = https://github.com/Agricultural-portal/Frontend.git
